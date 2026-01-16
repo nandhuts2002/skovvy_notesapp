@@ -1,0 +1,20 @@
+{
+  "name": "simple-notes-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Simple Notes App with Supabase authentication",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["notes", "express", "supabase", "jwt"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  }
+}

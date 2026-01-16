@@ -1,0 +1,21 @@
+# Logs
+*.log
+
+# Dependencies
+node_modules/
+
+# Build
+dist
+dist-ssr
+*.local
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
