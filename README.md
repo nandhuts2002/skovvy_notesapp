@@ -1,425 +1,254 @@
-# Simple Notes App
+# Notes App
 
-A complete, production-ready notes application built with **React + Vite** frontend, **Node.js + Express** backend, **Supabase** for PostgreSQL database and authentication, secured with **JWT tokens**.
+A full-stack notes application with authentication and CRUD operations.
 
-## 🚀 Tech Stack
+## Tech Stack
 
-### Frontend
-- **React 18** - UI library
-- **Vite** - Build tool and dev server
-- **React Router** - Client-side routing
-- **Axios** - HTTP client with interceptors
-- **Supabase JS Client** - Authentication
+- **Frontend**: React (Vite)
+- **Backend**: Node.js + Express
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth (JWT-based)
 
-### Backend
-- **Node.js** - Runtime environment
-- **Express** - Web framework
-- **Supabase** - PostgreSQL database & auth
-- **JWT** - Token-based authentication
-- **CORS** - Cross-origin resource sharing
+## Database Choice
 
-### Database
-- **Supabase (PostgreSQL)** - Cloud database
-- **Row Level Security (RLS)** - Data isolation
+**Supabase PostgreSQL** was chosen for:
+- Built-in authentication and JWT management
+- Row Level Security (RLS) for data isolation
+- Real-time capabilities
+- Easy integration with React
 
-## 📁 Project Structure
+## Authentication Method
 
-```
-/frontend
-  ├── src
-  │   ├── pages
-  │   │   ├── Signup.jsx          # User registration
-  │   │   ├── Login.jsx           # User login
-  │   │   ├── Notes.jsx           # Main notes dashboard
-  │   ├── components
-  │   │   ├── NoteForm.jsx        # Create/edit note form
-  │   │   ├── NoteList.jsx        # Display notes list
-  │   │   ├── NoteItem.jsx        # Individual note card
-  │   ├── services
-  │   │   ├── api.js              # Axios instance with JWT interceptor
-  │   │   ├── supabase.js         # Supabase client config
-  │   ├── context
-  │   │   ├── AuthContext.jsx     # Authentication state management
-  │   ├── App.jsx                 # Main app with routing
-  │   ├── main.jsx                # Entry point
+**Supabase Auth** - Handles user signup, login, and JWT token generation automatically. Tokens are verified on the backend using Supabase's service role key.
 
-/backend
-  ├── src
-  │   ├── routes
-  │   │   ├── notes.routes.js     # Notes API routes
-  │   ├── middleware
-  │   │   ├── auth.middleware.js  # JWT verification
-  │   ├── controllers
-  │   │   ├── notes.controller.js # CRUD logic
-  │   ├── supabaseClient.js       # Supabase admin client
-  │   ├── server.js               # Express server
+## Local Setup
 
-/database
-  ├── schema.sql                  # Database schema & RLS policies
-```
+### Prerequisites
+- Node.js 16+ installed
+- Supabase account and project created
 
-## 🗄️ Database Schema
-
-### Notes Table
-
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PRIMARY KEY, default uuid_generate_v4() |
-| user_id | UUID | NOT NULL, references auth.users(id) |
-| title | TEXT | NOT NULL |
-| content | TEXT | NOT NULL |
-| created_at | TIMESTAMP | default NOW() |
-| updated_at | TIMESTAMP | default NOW() |
-
-### Row Level Security (RLS) Policies
-
-All policies enforce that users can only access their own notes:
-- **SELECT**: Users see only their notes (`auth.uid() = user_id`)
-- **INSERT**: Users can only create notes for themselves
-- **UPDATE**: Users can only update their own notes
-- **DELETE**: Users can only delete their own notes
-
-## 🔐 Authentication & Security
-
-### How JWT Works in This App
-
-1. **User Signs Up/Logs In** → Supabase Auth creates session
-2. **Session Token** → Frontend stores `access_token` in localStorage
-3. **API Requests** → Axios interceptor attaches token:
-   ```
-   Authorization: Bearer <access_token>
-   ```
-4. **Backend Verification** → Middleware verifies token with Supabase:
-   ```javascript
-   const { data: { user }, error } = await supabase.auth.getUser(token);
-   ```
-5. **User ID Extraction** → Backend uses `user.id` for all database queries
-6. **Database Security** → RLS policies double-check user ownership
-
-### Security Features
-- ✅ JWT verification on every protected route
-- ✅ User ID extracted from verified token (never trusted from client)
-- ✅ Row Level Security enforces data isolation
-- ✅ Automatic token refresh handling
-- ✅ 401 responses for invalid/expired tokens
-- ✅ HTTPS required in production
-
-## 🛠️ Setup Instructions
-
-### 1. Supabase Setup
-
-1. Create a Supabase account at [supabase.com](https://supabase.com)
-2. Create a new project
-3. Go to **Project Settings** → **API**
-4. Copy the following:
-   - `Project URL` (SUPABASE_URL)
-   - `anon public` key (SUPABASE_ANON_KEY)
-   - `service_role` key (SUPABASE_SERVICE_ROLE_KEY) - **Keep this secret!**
-
-5. Go to **SQL Editor** and run the schema from `database/schema.sql`
-
-### 2. Backend Setup
+### 1. Clone and Install
 
 ```bash
 cd backend
-
-# Install dependencies
 npm install
 
-# Create .env file (copy from .env.example)
-cp .env.example .env
-
-# Edit .env and add your Supabase credentials
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-# PORT=5000
-
-# Start development server
-npm run dev
+cd ../frontend
+npm install
 ```
 
-Backend will run on `http://localhost:5000`
+### 2. Environment Variables
 
-### 3. Frontend Setup
+**Backend** (`backend/.env`):
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+PORT=5000
+```
 
+**Frontend** (`frontend/.env`):
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_public_key
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+### 3. Database Setup
+
+Run this SQL in your Supabase SQL Editor:
+
+```sql
+-- Create notes table
+CREATE TABLE notes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+CREATE POLICY "Users can view their own notes"
+  ON notes FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own notes"
+  ON notes FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own notes"
+  ON notes FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own notes"
+  ON notes FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Auto-update timestamp
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER notes_updated_at
+  BEFORE UPDATE ON notes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+```
+
+### 4. Run the Application
+
+**Backend:**
+```bash
+cd backend
+npm run dev
+# Runs on http://localhost:5000
+```
+
+**Frontend:**
 ```bash
 cd frontend
-
-# Install dependencies
-npm install
-
-# Create .env file (copy from .env.example)
-cp .env.example .env
-
-# Edit .env and add your Supabase credentials
-# VITE_SUPABASE_URL=https://your-project.supabase.co
-# VITE_SUPABASE_ANON_KEY=your-anon-key
-# VITE_API_BASE_URL=http://localhost:5000
-
-# Start development server
 npm run dev
+# Runs on http://localhost:5173
 ```
 
-Frontend will run on `http://localhost:5173`
+## Database Schema
 
-### 4. Test the Application
+### Notes Table
 
-1. Open `http://localhost:5173`
-2. Sign up with email and password
-3. Create, edit, and delete notes
-4. Log out and log back in
-5. Verify notes are persisted
+| Column      | Type      | Description                    |
+|-------------|-----------|--------------------------------|
+| id          | UUID      | Primary key                    |
+| user_id     | UUID      | Foreign key to auth.users      |
+| title       | TEXT      | Note title                     |
+| content     | TEXT      | Note content                   |
+| created_at  | TIMESTAMP | Auto-set on creation           |
+| updated_at  | TIMESTAMP | Auto-updated on modification   |
 
-## 📡 API Documentation
+**RLS Policies**: All operations (SELECT, INSERT, UPDATE, DELETE) are restricted to the authenticated user's own notes via `auth.uid() = user_id`.
 
-Base URL: `http://localhost:5000`
+## JWT Validation Implementation
 
-### Authentication
-All `/api/notes` routes require JWT authentication via the `Authorization` header.
+### How it works:
 
-### Endpoints
+1. **Frontend Login/Signup**: User authenticates via Supabase Auth, receives a JWT token
+2. **Token Storage**: JWT stored in Supabase client (localStorage)
+3. **API Requests**: Frontend sends JWT in `Authorization: Bearer <token>` header
+4. **Backend Validation**: Express middleware verifies JWT using Supabase service role:
 
-#### Create Note
+```javascript
+// backend/src/middleware/auth.middleware.js
+const jwt = require('jsonwebtoken');
+
+const authenticateUser = async (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    // Verify JWT with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    req.user = user; // Attach user to request
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+};
+```
+
+## API Examples
+
+### 1. Signup
 ```bash
-POST /api/notes
-Authorization: Bearer <access_token>
+# Handled by Supabase Auth client-side
+# Returns JWT token automatically
+```
+
+### 2. Get All Notes
+```bash
+GET http://localhost:5000/api/notes
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+Response:
+[
+  {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "user_id": "user-uuid",
+    "title": "Meeting Notes",
+    "content": "Discussed project milestones...",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+### 3. Create Note
+```bash
+POST http://localhost:5000/api/notes
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: application/json
 
 {
-  "title": "My First Note",
-  "content": "This is the note content"
+  "title": "Shopping List",
+  "content": "Eggs, Milk, Bread"
 }
 
-# Response: 201 Created
+Response:
 {
-  "id": "uuid",
-  "user_id": "uuid",
-  "title": "My First Note",
-  "content": "This is the note content",
-  "created_at": "2024-01-16T12:00:00Z",
-  "updated_at": "2024-01-16T12:00:00Z"
+  "id": "new-uuid",
+  "user_id": "user-uuid",
+  "title": "Shopping List",
+  "content": "Eggs, Milk, Bread",
+  "created_at": "2024-01-15T11:00:00Z",
+  "updated_at": "2024-01-15T11:00:00Z"
 }
 ```
 
-#### Get All Notes
+### 4. Update Note
 ```bash
-GET /api/notes
-Authorization: Bearer <access_token>
-
-# Response: 200 OK
-[
-  {
-    "id": "uuid",
-    "user_id": "uuid",
-    "title": "My First Note",
-    "content": "This is the note content",
-    "created_at": "2024-01-16T12:00:00Z",
-    "updated_at": "2024-01-16T12:00:00Z"
-  }
-]
-# Notes sorted by updated_at DESC
-```
-
-#### Get Single Note
-```bash
-GET /api/notes/:id
-Authorization: Bearer <access_token>
-
-# Response: 200 OK
-{
-  "id": "uuid",
-  "user_id": "uuid",
-  "title": "My First Note",
-  "content": "This is the note content",
-  "created_at": "2024-01-16T12:00:00Z",
-  "updated_at": "2024-01-16T12:00:00Z"
-}
-
-# Response: 404 Not Found (if note doesn't exist or doesn't belong to user)
-```
-
-#### Update Note
-```bash
-PUT /api/notes/:id
-Authorization: Bearer <access_token>
+PUT http://localhost:5000/api/notes/{noteId}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: application/json
 
 {
   "title": "Updated Title",
   "content": "Updated content"
 }
-
-# Response: 200 OK
-{
-  "id": "uuid",
-  "user_id": "uuid",
-  "title": "Updated Title",
-  "content": "Updated content",
-  "created_at": "2024-01-16T12:00:00Z",
-  "updated_at": "2024-01-16T12:30:00Z"
-}
-
-# Response: 404 Not Found (if note doesn't exist or doesn't belong to user)
 ```
 
-#### Delete Note
+### 5. Delete Note
 ```bash
-DELETE /api/notes/:id
-Authorization: Bearer <access_token>
+DELETE http://localhost:5000/api/notes/{noteId}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# Response: 200 OK
+Response:
 {
   "message": "Note deleted successfully"
 }
-
-# Response: 404 Not Found (if note doesn't exist or doesn't belong to user)
 ```
 
-### Error Responses
+## Security Features
 
-```bash
-# 401 Unauthorized - Missing or invalid token
-{
-  "error": "Unauthorized",
-  "message": "Missing or invalid Authorization header"
-}
+- **JWT Authentication**: All API endpoints require valid JWT token
+- **Row Level Security (RLS)**: Database-level isolation ensures users only access their own data
+- **User Scoping**: Backend extracts user ID from verified JWT, preventing unauthorized access
+- **CORS**: Configured to accept requests only from frontend origin
 
-# 400 Bad Request - Validation error
-{
-  "error": "Bad Request",
-  "message": "Title and content are required"
-}
-
-# 404 Not Found - Resource not found
-{
-  "error": "Not Found",
-  "message": "Note not found"
-}
-
-# 500 Internal Server Error
-{
-  "error": "Internal Server Error",
-  "message": "Something went wrong"
-}
-```
-
-## ✨ Features
-
-### Authentication
-- ✅ Email/password signup
-- ✅ Email/password login
-- ✅ Secure session management
-- ✅ Automatic token refresh
-- ✅ Protected routes (redirect to login)
-
-### Notes Management
-- ✅ Create notes with title and content
-- ✅ View all notes (sorted by most recently updated)
-- ✅ Edit notes inline
-- ✅ Delete notes with confirmation
-- ✅ Display notes count
-- ✅ Content preview (first 100 characters)
-- ✅ Relative timestamps ("2 hours ago")
-- ✅ Input validation (no empty fields)
-
-### Security
-- ✅ JWT verification on all protected routes
-- ✅ User ID scoping (can't access other users' notes)
-- ✅ Row Level Security in database
-- ✅ CORS protection
-- ✅ Error handling with proper HTTP codes
-
-## 🎨 UI/UX
-
-- Modern gradient design with purple theme
-- Responsive layout (mobile-friendly)
-- Smooth transitions and hover effects
-- Clean, intuitive interface
-- Loading states
-- Error messages
-- Empty state handling
-
-## 🚀 Production Deployment
-
-### Backend Deployment (e.g., Railway, Render, Heroku)
-1. Set environment variables in hosting platform
-2. Ensure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set
-3. Update CORS settings in `server.js` to allow your frontend domain
-
-### Frontend Deployment (e.g., Vercel, Netlify)
-1. Set environment variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_API_BASE_URL` (your backend URL)
-2. Build: `npm run build`
-3. Deploy the `dist` folder
-
-### Supabase (Production)
-1. Enable email confirmations in **Authentication** → **Settings**
-2. Configure email templates
-3. Set up custom SMTP (optional)
-4. Review RLS policies
-5. Enable database backups
-
-## 🧪 Testing
-
-### Manual Testing Checklist
-- [ ] Sign up with new email
-- [ ] Verify email confirmation (if enabled)
-- [ ] Log in with credentials
-- [ ] Create a note
-- [ ] Edit the note
-- [ ] Delete the note (with confirmation)
-- [ ] Log out
-- [ ] Verify redirect to login when accessing `/notes` while logged out
-- [ ] Log in again and verify notes persist
-- [ ] Test with invalid token (should return 401)
-
-## 📝 Environment Variables
-
-### Backend (.env)
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
-PORT=5000
-```
-
-### Frontend (.env)
-```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
-VITE_API_BASE_URL=http://localhost:5000
-```
-
-## 🔧 Troubleshooting
-
-### "Missing Supabase credentials" error
-- Ensure `.env` files exist in both frontend and backend
-- Verify environment variables are correctly set
-- Restart dev servers after changing `.env`
-
-### 401 Unauthorized errors
-- Check if token is being sent in Authorization header
-- Verify Supabase service role key is correct
-- Check if token has expired (refresh the page)
-
-### CORS errors
-- Ensure backend CORS is configured correctly
-- Verify `VITE_API_BASE_URL` matches backend URL
-
-### Notes not showing
-- Check browser console for errors
-- Verify database schema was created correctly
-- Check RLS policies in Supabase dashboard
-
-## 📄 License
+## License
 
 MIT
-
-## 👤 Author
-
-Built as a demonstration of full-stack development with modern technologies.
-
----
-
-**Happy coding! 🎉**
